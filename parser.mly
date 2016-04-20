@@ -111,6 +111,8 @@ Term :
       { $1 }
   | IF Term THEN Term ELSE Term
       { TmIf($1, $2, $4, $6) }
+  | LAMBDA LCID DOT Term
+      { TmAbs($1, $2.v, $4) }
 
 AppTerm :
     ATerm
@@ -121,6 +123,8 @@ AppTerm :
       { TmPred($1, $2) }
   | ISZERO ATerm
       { TmIsZero($1, $2) }
+  | AppTerm ATerm
+      { TmApp(tmInfo $1, $1, $2) }
 
 /* Atomic terms are ones that never require extra parentheses */
 ATerm :
@@ -135,6 +139,8 @@ ATerm :
               0 -> TmZero($1.i)
             | n -> TmSucc($1.i, f (n-1))
           in f $1.v }
+  | LCID
+      { TmVar ($1.i, $1.v) }
 
 
 /*   */

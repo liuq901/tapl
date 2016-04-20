@@ -13,6 +13,9 @@ type term =
   | TmSucc of info * term
   | TmPred of info * term
   | TmIsZero of info * term
+  | TmAbs of info * string * term
+  | TmApp of info * term * term
+  | TmVar of info * string
 
 type command =
   | Eval of info * term
@@ -27,7 +30,10 @@ let tmInfo t = match t with
   | TmZero(fi) -> fi
   | TmSucc(fi,_) -> fi
   | TmPred(fi,_) -> fi
-  | TmIsZero(fi,_) -> fi 
+  | TmIsZero(fi,_) -> fi
+  | TmAbs(fi,_,_) -> fi
+  | TmApp(fi,_,_) -> fi
+  | TmVar(fi,_) -> fi
 
 (* ---------------------------------------------------------------------- *)
 (* Printing *)
@@ -52,7 +58,6 @@ let break() = print_break 0 0
 
 let rec printtm_Term outer t = match t with
     TmIf(fi, t1, t2, t3) ->
-       obox0();
        pr "if ";
        printtm_Term false t1;
        print_space();
@@ -61,7 +66,11 @@ let rec printtm_Term outer t = match t with
        print_space();
        pr "else ";
        printtm_Term false t3;
-       cbox()
+  | TmAbs(fi, t1, t2) -> 
+       pr "lambda ";
+       pr t1;
+       pr ". ";
+       printtm_Term false t2;
   | t -> printtm_AppTerm outer t
 
 and printtm_AppTerm outer t = match t with
@@ -69,6 +78,12 @@ and printtm_AppTerm outer t = match t with
        pr "pred "; printtm_ATerm false t1
   | TmIsZero(_,t1) ->
        pr "iszero "; printtm_ATerm false t1
+  | TmApp(fi, t1, t2) ->
+       obox0();
+       printtm_AppTerm false t1;
+       print_space();
+       printtm_ATerm false t2;
+       cbox()
   | t -> printtm_ATerm outer t
 
 and printtm_ATerm outer t = match t with
@@ -82,6 +97,8 @@ and printtm_ATerm outer t = match t with
        | TmSucc(_,s) -> f (n+1) s
        | _ -> (pr "(succ "; printtm_ATerm false t1; pr ")")
      in f 1 t1
+  | TmVar(fi, s) ->
+     pr s
   | t -> pr "("; printtm_Term outer t; pr ")"
 
 let printtm t = printtm_Term true t 
