@@ -22,3 +22,5 @@ if (lambda x. x) true then 1 else 2;
 (lambda x. if x then true else false) false;
 
 (lambda x. x (lambda x. x)) 1;
+
+(lambda x. lambda y. y x) 26 (lambda z. if iszero z then 20 else 23);
