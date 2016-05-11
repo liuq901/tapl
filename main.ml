@@ -51,9 +51,13 @@ in
 let alreadyImported = ref ([] : string list)
 
 let rec process_command  cmd = match cmd with
-  | Eval(fi,t) -> 
+  | Eval(fi,t) ->
+      let typ = typeof t [] in
       let t' = eval t in
       printtm t'; 
+      print_break 1 2;
+      pr ": ";
+      printty typ;
       force_newline();
       ()
   

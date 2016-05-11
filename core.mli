@@ -6,4 +6,5 @@
 open Syntax
 open Support.Error
 
+val typeof : term -> context -> ty
 val eval : term -> term 

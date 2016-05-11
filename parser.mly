@@ -31,6 +31,8 @@ open Syntax
 %token <Support.Error.info> PRED
 %token <Support.Error.info> ISZERO
 %token <Support.Error.info> LAMBDA
+%token <Support.Error.info> BOOL
+%token <Support.Error.info> NAT
 
 /* Identifier and constant value tokens */
 %token <string Support.Error.withinfo> UCID  /* uppercase-initial */
@@ -106,13 +108,27 @@ Command :
   | Term 
       { (let t = $1 in Eval(tmInfo t,t)) }
 
+AType:
+    LPAREN Type RPAREN
+      { $2 }
+  | BOOL
+      { TyBool }
+  | NAT
+      { TyNat }
+
+Type:
+    AType ARROW Type
+      { TyArr($1, $3) }
+  | AType
+      { $1 }
+
 Term :
     AppTerm
       { $1 }
   | IF Term THEN Term ELSE Term
       { TmIf($1, $2, $4, $6) }
-  | LAMBDA LCID DOT Term
-      { TmAbs($1, $2.v, $4) }
+  | LAMBDA LCID COLON Type DOT Term
+      { TmAbs($1, $2.v, $4, $6) }
 
 AppTerm :
     ATerm

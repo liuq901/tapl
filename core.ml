@@ -7,6 +7,43 @@ open Support.Pervasive
 
 exception NoRuleApplies
 exception NoSuchVariable
+exception TypeError
+
+let rec typeofVar ctx x = match ctx with
+    [] -> None
+  | (y, typ)::rest -> if x = y then Some typ else typeofVar rest x
+
+let rec typeof t ctx = match t with
+    TmTrue(fi) ->
+      TyBool
+  | TmFalse(fi) ->
+      TyBool
+  | TmIf(fi,t1,t2,t3) when typeof t1 ctx = TyBool ->
+      let ty2 = typeof t2 ctx in
+      if ty2 = typeof t3 ctx then ty2 else raise TypeError
+  | TmZero(fi) ->
+      TyNat
+  | TmSucc(fi,t1) when typeof t1 ctx = TyNat ->
+      TyNat
+  | TmPred(fi,t1) when typeof t1 ctx = TyNat ->
+      TyNat
+  | TmIsZero(fi,t1) when typeof t1 ctx = TyNat ->
+      TyBool
+  | TmAbs(fi,x,typ,t1) ->
+      TyArr(typ, typeof t1 ((x,typ)::ctx))
+  | TmApp(fi,t1,t2) ->
+      let ty1 = typeof t1 ctx in
+      let ty2 = typeof t2 ctx in
+      (match ty1 with
+        TyArr(ty1',ty2') ->
+          if ty1' = ty2 then ty2' else raise TypeError
+        | _ -> raise TypeError)
+  | TmVar(fi,x) ->
+      let tyx = typeofVar ctx x in
+      (match tyx with
+        Some tyx' -> tyx'
+      | None -> raise TypeError)
+  | _ -> raise TypeError
 
 let rec isnumericval t = match t with
     TmZero(_) -> true
@@ -16,7 +53,7 @@ let rec isnumericval t = match t with
 let rec isval t = match t with
     TmTrue(_)  -> true
   | TmFalse(_) -> true
-  | TmAbs (_,_,_) -> true
+  | TmAbs (_,_,_,_) -> true
   | t when isnumericval t  -> true
   | _ -> false
 
@@ -29,8 +66,8 @@ let rec subtitude x v t = match t with
       TmPred(fi, subtitude x v t1)
   | TmIsZero(fi,t1) ->
       TmIsZero(fi, subtitude x v t1)
-  | TmAbs(fi,y,t1) when x <> y ->
-      TmAbs(fi, y, subtitude x v t1)
+  | TmAbs(fi,y,typ,t1) when x <> y ->
+      TmAbs(fi, y, typ, subtitude x v t1)
   | TmApp(fi,t1,t2) ->
       TmApp(fi, subtitude x v t1, subtitude x v t2)
   | TmVar(fi,y) when x = y ->
@@ -63,7 +100,7 @@ let rec eval1 t = match t with
   | TmIsZero(fi,t1) ->
       let t1' = eval1 t1 in
       TmIsZero(fi, t1')
-  | TmApp(fi,TmAbs(_,x,t12),v2) when (isval v2) ->
+  | TmApp(fi,TmAbs(_,x,typ,t12),v2) when (isval v2) ->
       subtitude x v2 t12
   | TmApp(fi,v1,t2) when (isval v1) ->
       let t2' = eval1 t2 in

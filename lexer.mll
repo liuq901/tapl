@@ -20,6 +20,8 @@ let reservedWords = [
   ("pred", fun i -> Parser.PRED i);
   ("iszero", fun i -> Parser.ISZERO i);
   ("lambda", fun i -> Parser.LAMBDA i);
+  ("bool", fun i -> Parser.BOOL i);
+  ("nat", fun i -> Parser.NAT i);
   
   (* Symbols *)
   ("_", fun i -> Parser.USCORE i);

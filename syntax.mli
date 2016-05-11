@@ -4,6 +4,13 @@ open Support.Pervasive
 open Support.Error
 
 (* Data type definitions *)
+type ty =
+    TyBool
+  | TyNat
+  | TyArr of ty * ty
+
+type context = (string * ty) list
+
 type term =
     TmTrue of info
   | TmFalse of info
@@ -12,7 +19,7 @@ type term =
   | TmSucc of info * term
   | TmPred of info * term
   | TmIsZero of info * term
-  | TmAbs of info * string * term
+  | TmAbs of info * string * ty * term
   | TmApp of info * term * term
   | TmVar of info * string
 
@@ -24,6 +31,7 @@ type command =
 (* Printing *)
 val printtm: term -> unit
 val printtm_ATerm: bool -> term -> unit
+val printty: ty -> unit
 
 (* Misc *)
 val tmInfo: term -> info

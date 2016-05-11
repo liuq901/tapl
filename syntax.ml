@@ -5,6 +5,11 @@ open Support.Pervasive
 (* ---------------------------------------------------------------------- *)
 (* Datatypes *)
 
+type ty =
+    TyBool
+  | TyNat
+  | TyArr of ty * ty
+
 type term =
     TmTrue of info
   | TmFalse of info
@@ -13,12 +18,14 @@ type term =
   | TmSucc of info * term
   | TmPred of info * term
   | TmIsZero of info * term
-  | TmAbs of info * string * term
+  | TmAbs of info * string * ty * term
   | TmApp of info * term * term
   | TmVar of info * string
 
 type command =
   | Eval of info * term
+
+type context = (string * ty) list
 
 (* ---------------------------------------------------------------------- *)
 (* Extracting file info *)
@@ -31,7 +38,7 @@ let tmInfo t = match t with
   | TmSucc(fi,_) -> fi
   | TmPred(fi,_) -> fi
   | TmIsZero(fi,_) -> fi
-  | TmAbs(fi,_,_) -> fi
+  | TmAbs(fi,_,_,_) -> fi
   | TmApp(fi,_,_) -> fi
   | TmVar(fi,_) -> fi
 
@@ -56,6 +63,18 @@ let obox() = open_hvbox 2
 let cbox() = close_box()
 let break() = print_break 0 0
 
+let rec printty t = match t with
+    TyBool ->
+       pr "bool";
+  | TyNat ->
+       pr "nat";
+  | TyArr(t1, t2) ->
+       pr "(";
+       printty(t1);
+       pr ")->(";
+       printty(t2);
+       pr ")"
+
 let rec printtm_Term outer t = match t with
     TmIf(fi, t1, t2, t3) ->
        pr "if ";
@@ -66,9 +85,11 @@ let rec printtm_Term outer t = match t with
        print_space();
        pr "else ";
        printtm_Term false t3;
-  | TmAbs(fi, t1, t2) -> 
+  | TmAbs(fi, t1, typ, t2) -> 
        pr "lambda ";
        pr t1;
+       pr ":";
+       printty typ;
        pr ". ";
        printtm_Term false t2;
   | t -> printtm_AppTerm outer t
