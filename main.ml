@@ -55,8 +55,7 @@ let rec process_command  cmd = match cmd with
       let typ = typeof t [] in
       let t' = eval t in
       printtm t'; 
-      print_break 1 2;
-      pr ": ";
+      pr " : ";
       printty typ;
       force_newline();
       ()

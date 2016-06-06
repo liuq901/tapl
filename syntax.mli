@@ -8,6 +8,7 @@ type ty =
     TyBool
   | TyNat
   | TyArr of ty * ty
+  | TyRcd of (string * ty) list
 
 type context = (string * ty) list
 
@@ -22,6 +23,8 @@ type term =
   | TmAbs of info * string * ty * term
   | TmApp of info * term * term
   | TmVar of info * string
+  | TmRcd of info * (string * term) list
+  | TmProj of info * term * string
 
 type command =
   | Eval of info * term

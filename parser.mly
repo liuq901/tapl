@@ -111,10 +111,22 @@ Command :
 AType:
     LPAREN Type RPAREN
       { $2 }
+  | LCURLY RecordType RCURLY
+      { TyRcd($2) }
   | BOOL
       { TyBool }
   | NAT
       { TyNat }
+
+RecordType:
+    RType
+      { [$1] }
+  | RType COMMA RecordType
+      { $1 :: $3 }
+
+RType:
+    LCID COLON Type
+      { ($1.v, $3) }
 
 Type:
     AType ARROW Type
@@ -129,6 +141,18 @@ Term :
       { TmIf($1, $2, $4, $6) }
   | LAMBDA LCID COLON Type DOT Term
       { TmAbs($1, $2.v, $4, $6) }
+  | Term DOT LCID
+      { TmProj(tmInfo $1, $1, $3.v) }
+
+RecordTerm:
+    RTerm
+      { [$1] }
+  | RTerm COMMA RecordTerm
+      { $1 :: $3 }
+
+RTerm:
+    LCID EQ Term
+      { ($1.v, $3) }
 
 AppTerm :
     ATerm
@@ -146,6 +170,8 @@ AppTerm :
 ATerm :
     LPAREN Term RPAREN  
       { $2 } 
+  | LCURLY RecordTerm RCURLY
+      { TmRcd($1, $2) }
   | TRUE
       { TmTrue($1) }
   | FALSE

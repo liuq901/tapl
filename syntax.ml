@@ -9,6 +9,7 @@ type ty =
     TyBool
   | TyNat
   | TyArr of ty * ty
+  | TyRcd of (string * ty) list
 
 type term =
     TmTrue of info
@@ -21,6 +22,8 @@ type term =
   | TmAbs of info * string * ty * term
   | TmApp of info * term * term
   | TmVar of info * string
+  | TmRcd of info * (string * term) list
+  | TmProj of info * term * string
 
 type command =
   | Eval of info * term
@@ -41,6 +44,8 @@ let tmInfo t = match t with
   | TmAbs(fi,_,_,_) -> fi
   | TmApp(fi,_,_) -> fi
   | TmVar(fi,_) -> fi
+  | TmRcd(fi,_) -> fi
+  | TmProj(fi,_,_) -> fi
 
 (* ---------------------------------------------------------------------- *)
 (* Printing *)
@@ -63,27 +68,47 @@ let obox() = open_hvbox 2
 let cbox() = close_box()
 let break() = print_break 0 0
 
-let rec printty t = match t with
+let rec printRcdTy t = match t with
+    [] -> ()
+  | (name, ty) :: t' ->
+       pr name;
+       pr ":";
+       printty ty;
+       (match t' with
+           [] -> ()
+        | _ ->
+            pr ", ";
+            printRcdTy t')
+
+and printty t = match t with
     TyBool ->
        pr "bool";
   | TyNat ->
        pr "nat";
   | TyArr(t1, t2) ->
+       print_ty_par(t1);
+       pr "->";
+       printty(t2)
+  | TyRcd(t1) ->
+       pr "{";
+       printRcdTy(t1);
+       pr "}"
+
+and print_ty_par t = match t with
+    TyArr(_,_) ->
        pr "(";
-       printty(t1);
-       pr ")->(";
-       printty(t2);
+       printty t;
        pr ")"
+  | _ ->
+       printty t
 
 let rec printtm_Term outer t = match t with
     TmIf(fi, t1, t2, t3) ->
        pr "if ";
        printtm_Term false t1;
-       print_space();
-       pr "then ";
+       pr " then ";
        printtm_Term false t2;
-       print_space();
-       pr "else ";
+       pr " else ";
        printtm_Term false t3;
   | TmAbs(fi, t1, typ, t2) -> 
        pr "lambda ";
@@ -100,11 +125,17 @@ and printtm_AppTerm outer t = match t with
   | TmIsZero(_,t1) ->
        pr "iszero "; printtm_ATerm false t1
   | TmApp(fi, t1, t2) ->
-       obox0();
        printtm_AppTerm false t1;
-       print_space();
+       pr " ";
        printtm_ATerm false t2;
-       cbox()
+  | TmProj(_,t1,x) ->
+       printtm_Term false t1;
+       pr ".";
+       pr x
+  | TmRcd(_,t1) ->
+       pr "{";
+       printRcdTerm t1;
+       pr "}"
   | t -> printtm_ATerm outer t
 
 and printtm_ATerm outer t = match t with
@@ -121,6 +152,18 @@ and printtm_ATerm outer t = match t with
   | TmVar(fi, s) ->
      pr s
   | t -> pr "("; printtm_Term outer t; pr ")"
+
+and printRcdTerm t = match t with
+    [] -> ()
+  | (name, term) :: t' ->
+       pr name;
+       pr "=";
+       printtm_Term false term;
+       (match t' with
+           [] -> ()
+        | _ ->
+            pr ", ";
+            printRcdTerm t')
 
 let printtm t = printtm_Term true t 
 
